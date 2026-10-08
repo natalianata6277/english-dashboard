@@ -18,7 +18,12 @@ const defaults=()=>({
     {id:uid(),name:'English Cactus',category:'Podcast',link:'https://youtube.com/@englishcactusfy?si=fNi7n7mLt683z6lt',notes:'Listening'},
     {id:uid(),name:'Бебрис — 5000 слов',category:'Words',link:'https://youtube.com/playlist?list=PLD6SPjEPomauo4F7ejH8BOhJq0LUzDoiT&si=5EcOE9Dj0CSbyKcU',notes:'Core words'},
     {id:uid(),name:'How to Speak',category:'Speaking',link:'https://youtube.com/playlist?list=PLD6SPjEPomatoOVGOzBcAYYNgSGyC0NK2&si=AmNy7_zpvZrdiqFv',notes:'Speaking patterns'},
-    {id:uid(),name:'Shadowing',category:'Speaking',link:'https://shadowing.tech',notes:'Shadowing practice'}
+    {id:uid(),name:'Shadowing',category:'Speaking',link:'https://shadowing.tech',notes:'Shadowing practice'},
+    {id:uid(),name:'B1 → C1',category:'Grammar',link:'https://youtube.com/playlist?list=PLD6SPjEPomavdV8S5p7dPaz8o45a-B-hg&si=TdPLXv-hxShHWRAf',notes:'Lessons + Grammar'},
+    {id:uid(),name:'B2 → C1',category:'Grammar',link:'https://youtube.com/playlist?list=PLKVXijgJyL3s&si=CTM9uwxJWsSF7eQz',notes:'Lessons + Grammar'},
+    {id:uid(),name:'Words · Part 2',category:'Words',link:'https://youtube.com/playlist?list=PLD6SPjEPomas-i-odgv_nktMm0caeUFrf&si=UJNxYWtHUitPeMlT',notes:'Second half'},
+    {id:uid(),name:'How to Speak A0 → A1',category:'Speaking',link:'https://youtube.com/playlist?list=PLD6SPjEPomatoOVGOzBcAYYNgSGyC0NK2&si=szdMH6mszEcl3iBl',notes:'Speaking'},
+    {id:uid(),name:'How to Speak A1 → A2',category:'Speaking',link:'https://youtube.com/playlist?list=PLD6SPjEPomatqksnI7khGOkOyeBOb7dYf&si=UtgopTKU2VzzzzFW',notes:'Speaking'}
   ],
   calendar:{}, sessions:[], lastImage:'', quoteIdx:0,
   flash:{} // wordId -> {level, next}
@@ -27,6 +32,14 @@ let S;
 try{S=Object.assign(defaults(),JSON.parse(localStorage.getItem(LS_KEY)||'{}'))}catch(e){S=defaults()}
 const save=()=>localStorage.setItem(LS_KEY,JSON.stringify(S));
 try{S.vocabulary.forEach(w=>{if(w.status==='NEW'||w.status==='DIFFICULT')w.status='LEARNING'});save()}catch(e){}
+const EXTRA_RES=[
+  {name:'B1 → C1',category:'Grammar',link:'https://youtube.com/playlist?list=PLD6SPjEPomavdV8S5p7dPaz8o45a-B-hg&si=TdPLXv-hxShHWRAf',notes:'Lessons + Grammar'},
+  {name:'B2 → C1',category:'Grammar',link:'https://youtube.com/playlist?list=PLKVXijgJyL3s&si=CTM9uwxJWsSF7eQz',notes:'Lessons + Grammar'},
+  {name:'Words · Part 2',category:'Words',link:'https://youtube.com/playlist?list=PLD6SPjEPomas-i-odgv_nktMm0caeUFrf&si=UJNxYWtHUitPeMlT',notes:'Second half'},
+  {name:'How to Speak A0 → A1',category:'Speaking',link:'https://youtube.com/playlist?list=PLD6SPjEPomatoOVGOzBcAYYNgSGyC0NK2&si=szdMH6mszEcl3iBl',notes:'Speaking'},
+  {name:'How to Speak A1 → A2',category:'Speaking',link:'https://youtube.com/playlist?list=PLD6SPjEPomatqksnI7khGOkOyeBOb7dYf&si=UtgopTKU2VzzzzFW',notes:'Speaking'}
+];
+try{EXTRA_RES.forEach(r=>{if(!S.resources.some(x=>x.link===r.link)){r.id=uid();S.resources.push(r)}});save()}catch(e){}
 function logSession(activity,minutes=15){
   S.sessions.push({id:uid(),date:todayStr(),activity,minutes});
   if(!S.calendar[todayStr()]) S.calendar[todayStr()]='study';
@@ -369,9 +382,10 @@ function pReview(){
 }
 
 /* ---------- generic activity pages ---------- */
-function activityShell(title,sub,body,extLink,extLabel){
+function activityShell(title,sub,body,buttons){
+  const btns=(buttons||[]).map(b=>`<a class="btn rose" href="${b.u}" target="_blank" rel="noopener">${esc(b.t)}</a>`).join('<div style="height:10px"></div>');
   app.innerHTML=`${titleRow(title,sub)}
-  ${extLink?`<div style="height:14px"></div><a class="btn rose" href="${extLink}" target="_blank" rel="noopener">${extLabel}</a><div style="height:12px"></div>`:''}
+  ${btns?`<div style="height:14px"></div>${btns}<div style="height:12px"></div>`:''}
   <button class="btn ghost" id="addW">+ Add word to Vocabulary</button><div style="height:6px"></div>${body||''}`;
   $('#addW').onclick=()=>vocabForm(title);
 }
@@ -381,12 +395,12 @@ function wordListHTML(filterFn){
   return `<div class="eyebrow">Recent words</div>`+list.map(w=>`<div class="item"><h3>${esc(w.en)}</h3><p>${esc(w.ru||'')}</p><div class="meta">${esc(w.source||'')} · ${esc(w.status||'')}</div></div>`).join('');
 }
 function pPodcasts(){
-  activityShell('Podcasts','English Cactus — listen like a magazine.',`
+  activityShell('Podcasts','Listen to 20 minutes of a podcast and write down useful unfamiliar words and phrases',`
     <div class="card"><div class="quote-src">My podcasts</div>
     ${S.podcasts.map(p=>`<div class="kv"><span><b>${esc(p.name)}</b><br><span class="small">${esc(p.notes||'')}</span></span><a href="${esc(p.link)}" target="_blank" rel="noopener">↗</a></div>`).join('')}
     <button class="chip" id="addP" style="margin-top:10px">+ Add podcast</button></div>
     ${wordListHTML(w=>w.source==='Podcasts')}`,
-    'https://youtube.com/@englishcactusfy?si=fNi7n7mLt683z6lt','▶ OPEN ENGLISH CACTUS');
+    [{t:'▶ OPEN ENGLISH CACTUS',u:'https://youtube.com/@englishcactusfy?si=fNi7n7mLt683z6lt'}]);
   $('#addP').onclick=()=>{
     openModal(`<h2 class="big">Podcast</h2><form id="pf">${field('Name','name')}${field('Link','link')}<label class="lbl">Notes</label><textarea name="notes"></textarea><button class="btn" style="margin-top:12px">Save</button></form>`);
     $('#pf').onsubmit=e=>{e.preventDefault();const o=Object.fromEntries(new FormData(e.target));o.id=uid();o.date=todayStr();S.podcasts.push(o);logSession('Podcasts',20);save();route()};
@@ -394,14 +408,14 @@ function pPodcasts(){
 }
 function pLessons(){
   const list=[...S.lessons].reverse().slice(0,8);
-  activityShell('Lessons','Grammar in real life. Keep it light.',`
+  activityShell('Lessons','Watch 1 lesson, find the topic in your grammar book and do the exercises',`
     <div class="card"><button class="btn" id="addL">+ New lesson note</button></div>
     ${list.map(l=>`<div class="item"><h3>${esc(l.title||'Lesson')}</h3><p>${esc(l.grammar||'')}</p><div class="meta">${esc(l.date||'')} · understood: ${esc(l.understood||'—')}</div>
     <div style="display:flex;gap:10px;margin-top:12px;align-items:center;justify-content:flex-end">
       <button class="iconbtn" data-edit="${l.id}" aria-label="Edit">${PENCIL}</button>
       <button class="iconbtn" data-del="${l.id}" aria-label="Delete">${TRASH}</button>
     </div></div>`).join('')}`,
-    null);
+    [{t:'B1 → C1',u:'https://youtube.com/playlist?list=PLD6SPjEPomavdV8S5p7dPaz8o45a-B-hg&si=TdPLXv-hxShHWRAf'},{t:'B2 → C1',u:'https://youtube.com/playlist?list=PLKVXijgJyL3s&si=CTM9uwxJWsSF7eQz'}]);
   $('#addL').onclick=()=>lessonForm(null);
   app.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>lessonForm(S.lessons.find(x=>x.id===b.dataset.edit)));
   app.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{S.lessons=S.lessons.filter(x=>x.id!==b.dataset.del);save();route()});
@@ -413,15 +427,15 @@ function lessonForm(l){
     save();closeSheets();route();toast('Saved ♡')};
 }
 function pWords(){
-  activityShell('Words','Go girl! Step by step!',wordListHTML(w=>w.source==='Words'),
-    'https://youtube.com/playlist?list=PLD6SPjEPomauo4F7ejH8BOhJq0LUzDoiT&si=5EcOE9Dj0CSbyKcU','▶ OPEN 5000 WORDS');
+  activityShell('Words','Listen to 1 lesson, pick truly useful unfamiliar words and add them to your Words',wordListHTML(w=>w.source==='Words'),
+    [{t:'▶ WORDS · PART 1',u:'https://youtube.com/playlist?list=PLD6SPjEPomauo4F7ejH8BOhJq0LUzDoiT&si=5EcOE9Dj0CSbyKcU'},{t:'▶ WORDS · PART 2',u:'https://youtube.com/playlist?list=PLD6SPjEPomas-i-odgv_nktMm0caeUFrf&si=UJNxYWtHUitPeMlT'}]);
 }
 function pSpeak(){
-  activityShell('How to Speak','Patterns you can steal for real life.',wordListHTML(w=>w.source==='How to Speak'),
-    'https://youtube.com/playlist?list=PLD6SPjEPomatoOVGOzBcAYYNgSGyC0NK2&si=AmNy7_zpvZrdiqFv','▶ OPEN PLAYLIST');
+  activityShell('How to Speak','Listen to 1 lesson, repeat the patterns out loud, then make your own sentences',wordListHTML(w=>w.source==='How to Speak'),
+    [{t:'A0 → A1',u:'https://youtube.com/playlist?list=PLD6SPjEPomatoOVGOzBcAYYNgSGyC0NK2&si=szdMH6mszEcl3iBl'},{t:'A1 → A2',u:'https://youtube.com/playlist?list=PLD6SPjEPomatqksnI7khGOkOyeBOb7dYf&si=UtgopTKU2VzzzzFW'}]);
 }
 function pShadow(){
-  activityShell('Shadowing','Repeat · shadow · own it.',wordListHTML(w=>w.source==='Shadowing'),'https://shadowing.tech','▶ OPEN SHADOWING');
+  activityShell('Shadowing','On the site, repeat after native speakers. Then watch a few short reels and read them out loud like you are already C2',wordListHTML(w=>w.source==='Shadowing'),[{t:'▶ OPEN SHADOWING',u:'https://shadowing.tech'}]);
 }
 const TALK_PROMPTS=[
   "Pretend we are two friends having matcha in a Manhattan cafe. Chat with me and correct me softly.",
@@ -441,7 +455,7 @@ const WRITE_PROMPTS=[
 ];
 function pTalk(){
   const p=TALK_PROMPTS[Math.floor(Math.random()*TALK_PROMPTS.length)];
-  activityShell('Talk with GPT','Speak freely. Save what shines.',`
+  activityShell('Talk with GPT','Train your pronunciation, stick to one topic, use new patterns and words',`
     <div class="card"><div class="quote-src">Prompt idea</div><p class="small">${esc(p)}</p>
     <button class="btn light" id="logT">Log talking session</button></div>`
     +wordListHTML(w=>w.source==='Talk with GPT'),null);
@@ -449,7 +463,7 @@ function pTalk(){
 }
 function pWrite(){
   const p=WRITE_PROMPTS[Math.floor(Math.random()*WRITE_PROMPTS.length)];
-  activityShell('Write with GPT','One paragraph. Then polish.',`
+  activityShell('Write with GPT','Write in English on one topic',`
     <div class="card"><div class="quote-src">Prompt idea</div><p class="small">${esc(p)}</p>
     <button class="btn light" id="logW">Log writing session</button></div>`
     +wordListHTML(w=>w.source==='Write with GPT'),null);
