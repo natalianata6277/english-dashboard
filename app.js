@@ -355,9 +355,9 @@ function lessonForm(l){
     save();closeSheets();route();toast('Saved ♡')};
 }
 function pWords(){
-  const list=[...S.wordsLessons].reverse().slice(0,8);
   activityShell('Words','Go girl! Step by step!',wordListHTML(w=>w.source==='Words'),
     'https://youtube.com/playlist?list=PLD6SPjEPomauo4F7ejH8BOhJq0LUzDoiT&si=5EcOE9Dj0CSbyKcU','▶ OPEN 5000 WORDS');
+}
 function pSpeak(){
   activityShell('How to Speak','Patterns you can steal for real life.',wordListHTML(w=>w.source==='How to Speak'),
     'https://youtube.com/playlist?list=PLD6SPjEPomatoOVGOzBcAYYNgSGyC0NK2&si=AmNy7_zpvZrdiqFv','▶ OPEN PLAYLIST');
