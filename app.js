@@ -299,8 +299,8 @@ function dayPopup(k){
   </div>
   <div id="timeRow" style="display:none;margin-top:12px"><label class="lbl">Minutes</label>
   <div style="display:flex;gap:10px"><input id="dayMins" type="number" min="1" max="600" value="${startM}" style="margin:0"><button class="btn" id="daySave" style="flex:1.3">Save</button></div></div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
-  <button class="chip" data-r>Rest day</button><button class="chip" data-c>Clear</button></div>`);
+  <div style="display:flex;gap:10px;margin-top:10px;align-items:center">
+  <button class="chip" data-r style="flex:1;border-color:var(--pinkbtn);color:var(--rasp);min-height:52px">Rest day</button><button class="iconbtn" data-c aria-label="Clear">${TRASH}</button></div>`);
   const row=modalBox.querySelector('#timeRow');
   const paint=()=>{modalBox.querySelectorAll('[data-a]').forEach(b=>{const on=b.dataset.a===sel;b.style.borderColor=on?'var(--pinkbtn)':'';b.style.background=on?'var(--pinksoft)':''});row.style.display=sel?'block':'none'};
   modalBox.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{sel=b.dataset.a;paint()});
