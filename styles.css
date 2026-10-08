@@ -20,7 +20,10 @@ body{
   font-family:var(--font-sans);font-size:18px;line-height:1.6;
   -webkit-font-smoothing:antialiased;overflow-x:hidden;
 }
-a{color:inherit}
+a{color:var(--pinkbtn)}
+.sheet-box a.biglink{color:var(--ink)}
+input[type="date"]{-webkit-text-fill-color:var(--ink)}
+::placeholder{color:var(--faint);opacity:1}
 button{font-family:inherit}
 .topbar{
   position:sticky;top:0;z-index:30;
@@ -211,6 +214,7 @@ label.lbl{font-size:13px;letter-spacing:.2em;font-weight:700;color:var(--soft);t
   position:fixed;right:18px;bottom:calc(env(safe-area-inset-bottom,0px) + 96px);
   width:62px;height:62px;border-radius:50%;border:0;background:var(--ink);color:#fff;
   font-size:32px;z-index:35;box-shadow:var(--shadow);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;line-height:1;padding:0 0 6px 0;
 }
 .modal{position:fixed;inset:0;z-index:70;display:none;align-items:flex-end;justify-content:center}
 .modal.open{display:flex}
