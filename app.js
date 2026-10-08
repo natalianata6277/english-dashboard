@@ -26,6 +26,7 @@ const defaults=()=>({
 let S;
 try{S=Object.assign(defaults(),JSON.parse(localStorage.getItem(LS_KEY)||'{}'))}catch(e){S=defaults()}
 const save=()=>localStorage.setItem(LS_KEY,JSON.stringify(S));
+try{S.vocabulary.forEach(w=>{if(w.status==='NEW'||w.status==='DIFFICULT')w.status='LEARNING'});save()}catch(e){}
 function logSession(activity,minutes=15){
   S.sessions.push({id:uid(),date:todayStr(),activity,minutes});
   if(!S.calendar[todayStr()]) S.calendar[todayStr()]='study';
@@ -154,8 +155,9 @@ const I_CAL='<svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="14" r
 const I_AA='<svg viewBox="0 0 24 24"><text x="12" y="17.5" text-anchor="middle" font-size="14" font-weight="700" font-family="Georgia,serif" style="fill:currentColor;stroke:none">Aa</text></svg>';
 const I_HOME='<svg viewBox="0 0 24 24"><path d="M4 11.5 12 4.5l8 7"/><path d="M6.5 10.5V20h11v-9.5"/></svg>';
 const I_CARDS='<svg viewBox="0 0 24 24"><rect x="8" y="4" width="11" height="15" rx="2.5" transform="rotate(10 12 12)"/><rect x="5" y="5" width="11" height="15" rx="2.5" transform="rotate(-8 12 12)" style="fill:#fff"/></svg>';
+const I_UP='<svg viewBox="0 0 24 24"><path d="M12 20V5"/><path d="M6 11l6-6 6 6"/></svg>';
 const TABS=[
-  {id:'cal',icon:I_CAL,label:'Calendar',hash:'#/calendar'},
+  {id:'cal',icon:I_UP,label:'Progress',hash:'#/progress'},
   {id:'learn',icon:I_AA,label:'Words',hash:'#/vocabulary'},
   {id:'home',icon:I_HOME,label:'Home',hash:'#/home'},
   {id:'cards',icon:I_CARDS,label:'Cards',hash:'#/flashcards'},
@@ -172,7 +174,6 @@ function renderNav(route){
 }
 const ALL_LINKS=[
   ['ACTIVITIES',[['Podcasts','#/podcasts'],['Lessons + Grammar','#/lessons'],['Words','#/words'],['How to Speak','#/speak'],['Shadowing','#/shadowing'],['Talk with GPT','#/talk'],['Write with GPT','#/write']]],
-  ['MY ENGLISH WORLD',[['Progress','#/progress'],['Journal','#/journal']]],
   ['RESOURCES',[['Resources','#/resources'],['Export / Import','#/settings'],['Reset stats','#/reset']]],
 ];
 function openMore(){
@@ -186,7 +187,7 @@ function closeSheets(){$('#moreSheet').classList.remove('open');modal.classList.
 document.addEventListener('click',e=>{if(e.target.hasAttribute('data-close'))closeSheets()});
 $('#fabAdd').onclick=()=>{
   const r=(location.hash||'#/home').replace('#/','');
-  const map={vocabulary:'#/vocabulary',journal:'#/journal',grammar:'#/grammar',calendar:'#/calendar',podcasts:'#/podcasts',lessons:'#/lessons',words:'#/words'};
+  const map={vocabulary:'#/vocabulary',journal:'#/journal',grammar:'#/grammar',calendar:'#/progress',podcasts:'#/podcasts',lessons:'#/lessons',words:'#/words'};
   location.hash=map[r]||'#/vocabulary';
   setTimeout(()=>{const b=document.querySelector('[data-add]');if(b)b.click()},300);
 };
@@ -212,7 +213,7 @@ function vocabForm(src='Manual'){
   $('#vf').onsubmit=e=>{e.preventDefault();
     const f=new FormData(e.target);
     if(!f.get('en'))return toast('Add English word');
-    S.vocabulary.unshift({id:uid(),en:f.get('en'),ru:f.get('ru'),example:f.get('ex'),source:f.get('source'),date:todayStr(),status:'NEW',notes:''});
+    S.vocabulary.unshift({id:uid(),en:f.get('en'),ru:f.get('ru'),example:f.get('ex'),source:f.get('source'),date:todayStr(),status:'LEARNING',notes:''});
     logSession('Vocabulary',5); save(); closeSheets(); toast('Saved ♡'); route();
   };
 }
@@ -222,9 +223,9 @@ function todaySessions(){return S.sessions.filter(s=>s.date===todayStr())}
 function route(){
   const h=(location.hash||'#/home').replace('#/','').split('?')[0]||'home';
   closeSheets(); window.scrollTo({top:0});
-  const R={home:'home',vocabulary:'learn',flashcards:'cards',calendar:'cal'};
+  const R={home:'home',vocabulary:'learn',flashcards:'cards',calendar:'cal',progress:'cal'};
   renderNav(R[h]||'home');
-  ({home:pHome,calendar:pCal,progress:pProgress,journal:pJournal,
+  ({home:pHome,calendar:pCal,progress:pCal,
     podcasts:pPodcasts,lessons:pLessons,words:pWords,speak:pSpeak,shadowing:pShadow,
     talk:pTalk,write:pWrite,quizlet:pQuizlet,vocabulary:pVocab,flashcards:pFlash,
     resources:pRes,settings:pSettings,reset:pReset}[h]||pHome)();
@@ -261,7 +262,13 @@ function pCal(){
   const cells=[];
   for(let i=0;i<start;i++)cells.push('');
   for(let d=1;d<=days;d++)cells.push(d);
-  app.innerHTML=`${titleRow('Calendar')}
+  const sess=S.sessions.length, mins=S.sessions.reduce((a,s)=>a+(+s.minutes||15),0);
+  const wordsN=S.vocabulary.length;
+  const weekA=[...Array(7)].map((_,i)=>{const dd=new Date();dd.setDate(dd.getDate()-(6-i));return todayStr(dd)});
+  const counts=weekA.map(k=>S.sessions.filter(s=>s.date===k).length);
+  const maxC=Math.max(1,...counts);
+  const acts={}; S.sessions.forEach(s=>acts[s.activity]=(acts[s.activity]||0)+1);
+  app.innerHTML=`${titleRow('Progress')}
   <p class="subtitle">★ — learning day · ☁ — rest day.</p>
   <div class="card"><div style="display:flex;justify-content:space-between;align-items:center">
     <button class="chip" id="pm">←</button><b style="font-family:var(--font-serif);font-size:24px">${calCursor.toLocaleString('en',{month:'long',year:'numeric'})}</b>
@@ -284,7 +291,14 @@ function pCal(){
     <div style="font-family:var(--font-serif);font-size:22px;margin:6px 0">B1 → B2 · ${levelPct()}%</div>
     <div class="lvlbar"><i style="width:${levelPct()}%"></i></div>
     <div class="small">${levelMsg(levelPct())}</div>
-  </div>`;
+  </div>
+  <div class="row2"><div class="stat"><b>${sess}</b><span>sessions</span></div><div class="stat"><b>${Math.round(mins/60*10)/10}h</b><span>study time</span></div></div>
+  <div class="row2"><div class="stat"><b>${wordsN}</b><span>words</span></div><div class="stat"><b>${S.grammar.length}</b><span>grammar</span></div></div>
+  <div class="card"><div class="quote-src">Weekly activity</div>
+    <div class="bars">${counts.map(c=>`<div class="bar" style="flex:1"><i style="height:${Math.round(c/maxC*100)}%"></i></div>`).join('')}</div>
+    <div class="small">${weekA.map(k=>k.slice(8)).join(' · ')}</div></div>
+  <div class="card"><div class="quote-src">Activity balance</div>
+    ${Object.keys(acts).length?Object.entries(acts).map(([k,v])=>`<div class="kv"><span>${esc(k)}</span><b>${v}</b></div>`).join(''):'<p class="small">No sessions yet.</p>'}</div>`;
   $('#pm').onclick=()=>{calCursor=new Date(y,m-1,1);pCal()};
   $('#nm').onclick=()=>{calCursor=new Date(y,m+1,1);pCal()};
   app.querySelectorAll('[data-day]').forEach(b=>b.onclick=()=>{
@@ -477,9 +491,9 @@ function pVocab(){
   if(vStatus)list=list.filter(w=>w.status===vStatus);
   app.innerHTML=`${titleRow('Vocabulary',S.vocabulary.length+' words collected.')}
   <div class="card"><input id="vq" placeholder="Search words…" value="${esc(vQ)}">
-    <div class="chiprow" style="justify-content:flex-end;margin-top:10px">${['','NEW','LEARNING','KNOWN','DIFFICULT'].map(s=>`<button class="chip sm ${vStatus===s?'on':''}" data-st="${s}" style="padding:6px 10px;font-size:11px;min-height:32px">${s==='NEW'?'new':s==='LEARNING'?'learning':s==='KNOWN'?'known':s==='DIFFICULT'?'difficult':'all'}</button>`).join('')}</div>
+    <div class="chiprow" style="justify-content:flex-end;margin-top:10px">${['','LEARNING','KNOWN'].map(s=>`<button class="chip sm ${vStatus===s?'on':''}" data-st="${s}" style="padding:6px 10px;font-size:11px;min-height:32px">${s==='LEARNING'?'learning':s==='KNOWN'?'known':'all'}</button>`).join('')}</div>
     <button class="btn" data-add style="margin-top:10px">+ Add</button></div>
-  ${list.slice(0,30).map(w=>`<div class="item"><span class="tag corner ${w.status==='KNOWN'?'known':''}">${esc(w.status||'NEW')}</span><h3>${esc(w.en)}</h3><p>${esc(w.ru||'')}</p>
+  ${list.slice(0,30).map(w=>`<div class="item"><span class="tag corner ${w.status==='KNOWN'?'known':''}">${esc(w.status||'LEARNING')}</span><h3>${esc(w.en)}</h3><p>${esc(w.ru||'')}</p>
     ${w.example?`<p class="small"><i>${esc(w.example)}</i></p>`:''}
     <div style="display:flex;gap:10px;margin-top:12px;align-items:center">
       <button class="chip sm" data-kn="${w.id}" style="flex:1">${w.status==='KNOWN'?'♡ Known':'♡ Mark known'}</button>
@@ -496,9 +510,8 @@ function pVocab(){
 /* ---------- FLASHCARDS ---------- */
 let deck=[],di=0,flipped=false;
 function buildDeck(){
-  deck=[...S.vocabulary].sort((a,b)=>{
+  deck=S.vocabulary.filter(w=>(w.status||'LEARNING')==='LEARNING').sort((a,b)=>{
     const la=(S.flash[a.id]&&S.flash[a.id].level)||0, lb=(S.flash[b.id]&&S.flash[b.id].level)||0;
-    if(a.status==='DIFFICULT')return -1; if(b.status==='DIFFICULT')return 1;
     return la-lb;
   }).slice(0,30);
   if(!deck.length)deck=[];
@@ -519,7 +532,7 @@ function pFlash(){
   app.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{
     const g=+b.dataset.g, f=S.flash[w.id]||{level:0};
     f.level=g===0?0:g===1?Math.max(0,f.level):g===2?f.level+1:f.level+2;
-    if(g===0)w.status='DIFFICULT'; if(g===3)w.status='KNOWN';
+    if(g===3)w.status='KNOWN';
     S.flash[w.id]=f; save(); di++; flipped=false;
     if(di>=deck.length){app.innerHTML=`<div class="eyebrow">Done</div><h1 class="hero">Lovely<br><em>work.</em></h1>${heroImage('Done for today')}<button class="btn" onclick="location.hash='#/vocabulary'">Back to words</button>`;logSession('Flashcards',10);save();return}
     pFlash();
