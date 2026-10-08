@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>My English World</title>
+<meta name="description" content="My personal English world — fashion editorial learning dashboard.">
+<meta name="theme-color" content="#FFF8F3">
+<link rel="manifest" href="./manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="English World">
+<link rel="apple-touch-icon" href="./assets/icons/icon-192.png">
+<link rel="icon" type="image/svg+xml" href="./assets/icons/icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">ENGLISH WORLD<small>NATALIA · LONDON NYC LA</small></div>
+  <div class="top-date" id="topDate"></div>
+</header>
+
+<main id="app"></main>
+
+<button class="fab-add" id="fabAdd" aria-label="Add">+</button>
+
+<nav class="bottomnav"><div class="nav-inner" id="bottomNav"></div></nav>
+
+<div class="sheet" id="moreSheet">
+  <div class="sheet-bg" data-close></div>
+  <div class="sheet-box" id="moreBox"></div>
+</div>
+
+<div class="modal" id="modal"><div class="modal-bg" data-close></div><div class="modal-box" id="modalBox"></div></div>
+<div class="toast" id="toast"></div>
+
+<script src="./app.js"></script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
