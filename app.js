@@ -24,11 +24,12 @@ const defaults=()=>({
     {id:uid(),name:'How to Speak A0 → A1',category:'Speaking',link:'https://youtube.com/playlist?list=PLD6SPjEPomatoOVGOzBcAYYNgSGyC0NK2&si=szdMH6mszEcl3iBl',notes:'Speaking'},
     {id:uid(),name:'How to Speak A1 → A2',category:'Speaking',link:'https://youtube.com/playlist?list=PLD6SPjEPomatqksnI7khGOkOyeBOb7dYf&si=UtgopTKU2VzzzzFW',notes:'Speaking'}
   ],
-  calendar:{}, sessions:[], lastImage:'', quoteIdx:0,
+  calendar:{}, dayActivity:{}, sessions:[], lastImage:'', quoteIdx:0,
   flash:{} // wordId -> {level, next}
 });
 let S;
 try{S=Object.assign(defaults(),JSON.parse(localStorage.getItem(LS_KEY)||'{}'))}catch(e){S=defaults()}
+if(!S.dayActivity)S.dayActivity={};
 const save=()=>localStorage.setItem(LS_KEY,JSON.stringify(S));
 try{S.vocabulary.forEach(w=>{if(w.status==='NEW'||w.status==='DIFFICULT')w.status='LEARNING'});save()}catch(e){}
 const EXTRA_RES=[
@@ -275,6 +276,39 @@ function pHome(){
 }
 
 /* ---------- CALENDAR ---------- */
+function dayAct(k){return (S.dayActivity||{})[k]||''}
+function setDay(k,activity,minutes){
+  if(!S.dayActivity)S.dayActivity={};
+  if(!activity){delete S.calendar[k];delete S.dayActivity[k]}
+  else if(activity==='rest'){S.calendar[k]='rest';delete S.dayActivity[k]}
+  else{
+    S.calendar[k]='study';S.dayActivity[k]=activity;
+    S.sessions=S.sessions.filter(s=>!(s.origin==='cal'&&s.date===k));
+    S.sessions.push({id:uid(),date:k,activity:activity,minutes:Math.min(600,Math.max(1,parseInt(minutes)||20)),origin:'cal'});
+  }
+  save();
+}
+function dayPopup(k){
+  const acts=['Podcasts','Lessons + Grammar','Words','Speak','Shadowing','Talk','Write'];
+  let sel=dayAct(k);
+  const old=S.sessions.find(s=>s.origin==='cal'&&s.date===k);
+  const startM=(old&&old.minutes)||20;
+  openModal(`<h2 class="big">${esc(fmtDate(k))}</h2><p class="small">What did you do this day?</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px">
+  ${acts.map(a=>`<button class="chip sm" data-a="${a}" style="min-height:52px">${a}</button>`).join('')}
+  </div>
+  <div id="timeRow" style="display:none;margin-top:12px"><label class="lbl">Minutes</label>
+  <div style="display:flex;gap:10px"><input id="dayMins" type="number" min="1" max="600" value="${startM}" style="margin:0"><button class="btn" id="daySave" style="flex:1.3">Save</button></div></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+  <button class="chip" data-r>Rest day</button><button class="chip" data-c>Clear</button></div>`);
+  const row=modalBox.querySelector('#timeRow');
+  const paint=()=>{modalBox.querySelectorAll('[data-a]').forEach(b=>{const on=b.dataset.a===sel;b.style.borderColor=on?'var(--pinkbtn)':'';b.style.background=on?'var(--pinksoft)':''});row.style.display=sel?'block':'none'};
+  modalBox.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{sel=b.dataset.a;paint()});
+  modalBox.querySelector('#daySave').onclick=()=>{const m=Math.min(600,Math.max(1,parseInt(modalBox.querySelector('#dayMins').value)||20));setDay(k,sel,m);closeSheets();pCal();toast('Saved')};
+  modalBox.querySelector('[data-r]').onclick=()=>{setDay(k,'rest');closeSheets();pCal();toast('Rest day')};
+  modalBox.querySelector('[data-c]').onclick=()=>{setDay(k,'');closeSheets();pCal()};
+  paint();
+}
 let calCursor=new Date();
 function pCal(){
   const y=calCursor.getFullYear(),m=calCursor.getMonth();
@@ -298,8 +332,9 @@ function pCal(){
   ${cells.map(d=>{if(!d)return'<div></div>';
     const k=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const v=S.calendar[k]; const isT=k===todayStr();
+    const act=dayAct(k);
     const inner=v==='study'
-      ? `<span class="hwrap"><span class="str">★︎</span><span class="hnum">${d}</span></span>`
+      ? `<span class="hwrap"><span class="str">★︎</span><span class="hnum">${d}</span></span>${act?'<span class="adot"></span>':''}`
       : `${d}${v==='rest'?'<span class="cloud">☁</span>':''}`;
     return `<button class="cal-day ${isT?'today':''}" data-day="${k}">${inner}</button>`}).join('')}
   </div></div>
@@ -322,11 +357,7 @@ function pCal(){
     ${Object.keys(acts).length?Object.entries(acts).map(([k,v])=>`<div class="kv"><span>${esc(k)}</span><b>${v}</b></div>`).join(''):'<p class="small">No sessions yet.</p>'}</div>`;
   $('#pm').onclick=()=>{calCursor=new Date(y,m-1,1);pCal()};
   $('#nm').onclick=()=>{calCursor=new Date(y,m+1,1);pCal()};
-  app.querySelectorAll('[data-day]').forEach(b=>b.onclick=()=>{
-    const k=b.dataset.day, cur=S.calendar[k];
-    if(!cur)S.calendar[k]='study'; else if(cur==='study')S.calendar[k]='rest'; else delete S.calendar[k];
-    save(); pCal();
-  });
+  app.querySelectorAll('[data-day]').forEach(b=>b.onclick=()=>dayPopup(b.dataset.day));
 }
 
 /* ---------- PROGRESS ---------- */
