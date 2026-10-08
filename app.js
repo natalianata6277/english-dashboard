@@ -71,7 +71,7 @@ window.__imgRetry=function(el){
   el.src=getRandomImage(seen);
 };
 window.__imgFit=function(el){
-  try{var w=el.naturalWidth||0,h=el.naturalHeight||0;el.style.objectFit=(w>0&&h/w>=1.4)?'cover':'contain';}catch(e){}
+  try{el.style.objectFit='cover';}catch(e){}
 };
 window.__imgOk=function(el){
   window.__imgFit(el);
