@@ -182,6 +182,7 @@ label.lbl{font-size:13px;letter-spacing:.2em;font-weight:700;color:var(--soft);t
 .cal-day.today{border:1.8px solid var(--ink)}
 .cal-day .m{font-size:15px;line-height:1;margin-top:1px;font-style:normal}
 .cloud{color:#9db9dd;font-style:normal;font-size:14px;line-height:1;margin-top:1px}
+.adot{width:5px;height:5px;border-radius:50%;background:var(--pinkbtn);margin-top:2px}
 .hwrap{position:relative;display:inline-flex;align-items:center;justify-content:center;line-height:1}
 .str{
   font-size:46px;line-height:1;font-style:normal;
@@ -232,3 +233,20 @@ label.lbl{font-size:13px;letter-spacing:.2em;font-weight:700;color:var(--soft);t
   background:var(--ink);color:#fff;padding:13px 22px;border-radius:999px;
   font-size:16px;z-index:80;display:none;
 }
+/* gentle motion */
+.btn,.chip,.iconbtn,.navbtn,.cal-day,.fab-add,.sr-row button{transition:transform .15s ease}
+.btn:active,.chip:active{transform:scale(.96)}
+.iconbtn:active,.navbtn:active,.sr-row button:active{transform:scale(.9)}
+.cal-day:active,.fab-add:active{transform:scale(.9)}
+#app{animation:softIn .3s ease}
+@keyframes softIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.modal{display:flex;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .22s ease,visibility .22s}
+.modal.open{opacity:1;visibility:visible;pointer-events:auto}
+.modal-box{transform:translateY(26px);transition:transform .3s cubic-bezier(.32,.72,.35,1)}
+.modal.open .modal-box{transform:none}
+.sheet{display:block;visibility:hidden;opacity:0;pointer-events:none;transition:opacity .22s ease,visibility .22s}
+.sheet.open{visibility:visible;opacity:1;pointer-events:auto}
+.sheet-box{transform:translateY(30px);transition:transform .3s cubic-bezier(.32,.72,.35,1)}
+.sheet.open .sheet-box{transform:none}
+@media(prefers-reduced-motion:reduce){#app{animation:none}.modal-box,.sheet-box{transform:none;transition:none}}
+.hero-img img,.tsq img{opacity:0;transition:opacity .8s ease}

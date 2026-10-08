@@ -91,10 +91,11 @@ window.__imgRetry=function(el){
   var seen=(el.getAttribute('data-seen')||'').split('|').filter(Boolean);
   seen.push(el.getAttribute('src'));
   el.setAttribute('data-seen',seen.join('|'));
+  el.style.opacity='0';
   el.src=getRandomImage(seen);
 };
 window.__imgFit=function(el){
-  try{el.style.objectFit='cover';}catch(e){}
+  try{el.style.objectFit='cover';el.style.opacity='1';}catch(e){}
 };
 window.__imgOk=function(el){
   window.__imgFit(el);
@@ -245,6 +246,7 @@ function todaySessions(){return S.sessions.filter(s=>s.date===todayStr())}
 function route(){
   const h=(location.hash||'#/home').replace('#/','').split('?')[0]||'home';
   closeSheets(); window.scrollTo({top:0});
+  app.style.animation='none';void app.offsetWidth;app.style.animation='';
   const R={home:'home',vocabulary:'learn',flashcards:'cards',calendar:'cal',progress:'cal'};
   renderNav(R[h]||'home');
   ({home:pHome,calendar:pCal,progress:pCal,
