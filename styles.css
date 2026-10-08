@@ -148,7 +148,8 @@ label.lbl{font-size:13px;letter-spacing:.2em;font-weight:700;color:var(--soft);t
   border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:3px;
   font-size:11.5px;font-weight:600;color:var(--soft);min-height:58px;justify-content:center;border-radius:14px;cursor:pointer;
 }
-.navbtn .ic{font-size:22px;line-height:1}
+.navbtn .ic{display:inline-flex;line-height:1;font-size:22px}
+.navbtn .ic svg{width:25px;height:25px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .navbtn.on{color:var(--ink)}
 .sheet{
   position:fixed;inset:0;z-index:60;display:none;

@@ -110,11 +110,15 @@ const QUOTES=[
 ];
 
 /* ---------- nav ---------- */
+const I_CAL='<svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="14" rx="3"/><path d="M4 10.5h16"/><path d="M8.5 3.5V8M15.5 3.5V8"/></svg>';
+const I_AA='<svg viewBox="0 0 24 24"><text x="12" y="17.5" text-anchor="middle" font-size="14" font-weight="700" font-family="Georgia,serif" style="fill:currentColor;stroke:none">Aa</text></svg>';
+const I_HOME='<svg viewBox="0 0 24 24"><path d="M4 11.5 12 4.5l8 7"/><path d="M6.5 10.5V20h11v-9.5"/></svg>';
+const I_CARDS='<svg viewBox="0 0 24 24"><rect x="8" y="4" width="11" height="15" rx="2.5" transform="rotate(10 12 12)"/><rect x="5" y="5" width="11" height="15" rx="2.5" transform="rotate(-8 12 12)" style="fill:#fff"/></svg>';
 const TABS=[
-  {id:'cal',icon:'◐',label:'Calendar',hash:'#/calendar'},
-  {id:'learn',icon:'❥',label:'Words',hash:'#/vocabulary'},
-  {id:'home',icon:'✦',label:'Home',hash:'#/home'},
-  {id:'cards',icon:'♡',label:'Cards',hash:'#/flashcards'},
+  {id:'cal',icon:I_CAL,label:'Calendar',hash:'#/calendar'},
+  {id:'learn',icon:I_AA,label:'Words',hash:'#/vocabulary'},
+  {id:'home',icon:I_HOME,label:'Home',hash:'#/home'},
+  {id:'cards',icon:I_CARDS,label:'Cards',hash:'#/flashcards'},
   {id:'more',icon:'☰',label:'More',hash:''},
 ];
 function renderNav(route){
