@@ -34,25 +34,50 @@ function logSession(activity,minutes=15){
 function toast(m){toastEl.textContent=m;toastEl.style.display='block';clearTimeout(toastEl._t);toastEl._t=setTimeout(()=>toastEl.style.display='none',2200)}
 
 /* ---------- global image library ---------- */
+function jpgName(i){ return 'assets/images/image-'+('0'+i).slice(-2)+'.jpg'; }
 function imageCandidates(){
-  const out=[];
-  for(let i=1;i<=50;i++){
-    const n=String(i).padStart(2,'0');
-    for(const ext of ['jpg','jpeg','png','webp']) out.push(`assets/images/image-${n}.${ext}`);
-  }
+  var out=[], i;
+  for(i=1;i<=50;i++){ out.push(jpgName(i)); }
+  for(i=1;i<=50;i++){ var n=('0'+i).slice(-2); out.push('assets/images/image-'+n+'.jpeg'); out.push('assets/images/image-'+n+'.png'); out.push('assets/images/image-'+n+'.webp'); }
   return out;
 }
-function getRandomImage(){
-  const list=imageCandidates();
-  let pick=list[Math.floor(Math.random()*list.length)];
-  if(pick===S.lastImage) pick=list[Math.floor(Math.random()*list.length)];
-  S.lastImage=pick; save();
+function badMap(){ if(!S.imgBad) S.imgBad={}; return S.imgBad; }
+function getRandomImage(tried){
+  tried=tried||[];
+  var bad=badMap(), pool=[], i, p;
+  for(i=1;i<=50;i++){ p=jpgName(i); if(!bad[p] && tried.indexOf(p)===-1 && tried.indexOf('./'+p)===-1) pool.push(p); }
+  if(!pool.length){ for(i=1;i<=50;i++){ p=jpgName(i); if(tried.indexOf(p)===-1) pool.push(p); } }
+  if(!pool.length) pool.push(jpgName(1+Math.floor(Math.random()*50)));
+  var pick=pool[Math.floor(Math.random()*pool.length)];
+  if(pick===S.lastImage && pool.length>1) pick=pool[(pool.indexOf(pick)+1)%pool.length];
+  S.lastImage=pick; try{save();}catch(e){}
   return './'+pick;
 }
+function markImg(url,ok){
+  var k=String(url||'').split('?')[0].replace(/^\.\//,'');
+  if(k.indexOf('assets/images/')!==0) return;
+  var bad=badMap();
+  if(ok){ if(bad[k]){ delete bad[k]; try{save();}catch(e){} } }
+  else { if(!bad[k]){ bad[k]=1; try{save();}catch(e){} } }
+}
+window.__imgRetry=function(el){
+  markImg(el.getAttribute('src'),false);
+  var t=(parseInt(el.getAttribute('data-t')||'0',10))+1;
+  if(t>25){ el.remove(); return; }
+  el.setAttribute('data-t',t);
+  var seen=(el.getAttribute('data-seen')||'').split('|').filter(Boolean);
+  seen.push(el.getAttribute('src'));
+  el.setAttribute('data-seen',seen.join('|'));
+  el.src=getRandomImage(seen);
+};
+window.__imgOk=function(el){
+  markImg(el.getAttribute('src'),true);
+  if(el.parentElement) el.parentElement.classList.remove('fallback');
+};
 function heroImage(caption){
   const src=getRandomImage();
   const cap=caption||['London evenings','New York mornings','Los Angeles light'][Math.floor(Math.random()*3)];
-  return `<div class="hero-img fallback"><img src="${src}" alt="" loading="lazy" onload="this.parentElement.classList.remove('fallback')" onerror="this.remove()"><div class="cap">${esc(cap)}</div></div>`;
+  return `<div class="hero-img fallback"><img src="${src}" alt="" loading="lazy" data-t="0" data-seen="" onload="__imgOk(this)" onerror="__imgRetry(this)"><div class="cap">${esc(cap)}</div></div>`;
 }
 
 /* ---------- quotes (short excerpts only) ---------- */
