@@ -491,7 +491,7 @@ function pVocab(){
   if(vStatus)list=list.filter(w=>w.status===vStatus);
   app.innerHTML=`${titleRow('Vocabulary',S.vocabulary.length+' words collected.')}
   <div class="card"><input id="vq" placeholder="Search words…" value="${esc(vQ)}">
-    <div class="chiprow" style="justify-content:flex-end;margin-top:10px">${['','LEARNING','KNOWN'].map(s=>`<button class="chip sm ${vStatus===s?'on':''}" data-st="${s}" style="padding:6px 10px;font-size:11px;min-height:32px">${s==='LEARNING'?'learning':s==='KNOWN'?'known':'all'}</button>`).join('')}</div>
+    <div class="chiprow" style="justify-content:flex-start;margin-top:10px">${['','LEARNING','KNOWN'].map(s=>`<button class="chip sm ${vStatus===s?'on':''}" data-st="${s}" style="padding:6px 10px;font-size:11px;min-height:32px">${s==='LEARNING'?'learning':s==='KNOWN'?'known':'all'}</button>`).join('')}</div>
     <button class="btn" data-add style="margin-top:10px">+ Add</button></div>
   ${list.slice(0,30).map(w=>`<div class="item"><span class="tag corner ${w.status==='KNOWN'?'known':''}">${esc(w.status||'LEARNING')}</span><h3>${esc(w.en)}</h3><p>${esc(w.ru||'')}</p>
     ${w.example?`<p class="small"><i>${esc(w.example)}</i></p>`:''}
