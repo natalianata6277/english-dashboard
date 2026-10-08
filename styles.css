@@ -94,7 +94,7 @@ h2.big{font-family:var(--font-serif);font-size:36px;line-height:1.05;margin:0;fo
   background:linear-gradient(160deg,#f9e0e6,#f6d3c8 60%,#e8cfc1);
   box-shadow:var(--shadow);
 }
-.tsq img{width:100%;height:100%;object-fit:cover;display:block}
+.tsq img{width:100%;height:100%;object-fit:contain;display:block}
 h1.hero.sm{font-size:40px;line-height:1.02}
 .ministats{display:flex;gap:10px;margin:14px 0}
 .ministats>div{

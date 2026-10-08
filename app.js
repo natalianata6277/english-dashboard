@@ -70,7 +70,11 @@ window.__imgRetry=function(el){
   el.setAttribute('data-seen',seen.join('|'));
   el.src=getRandomImage(seen);
 };
+window.__imgFit=function(el){
+  try{var w=el.naturalWidth||0,h=el.naturalHeight||0;el.style.objectFit=(w>0&&h/w>=1.4)?'cover':'contain';}catch(e){}
+};
 window.__imgOk=function(el){
+  window.__imgFit(el);
   markImg(el.getAttribute('src'),true);
   if(el.parentElement) el.parentElement.classList.remove('fallback');
 };
@@ -80,7 +84,7 @@ function heroImage(){
 }
 function sqImage(){
   const src=getRandomImage();
-  return `<div class="tsq"><img src="${src}" alt="" loading="lazy" data-t="0" data-seen="" onload="if(this.parentElement)this.parentElement.classList.add('ok')" onerror="__imgRetry(this)"></div>`;
+  return `<div class="tsq"><img src="${src}" alt="" loading="lazy" data-t="0" data-seen="" onload="__imgFit(this)" onerror="__imgRetry(this)"></div>`;
 }
 function titleRow(titleHtml,sub){
   return `<div class="trow">${sqImage()}<div><h1 class="hero sm">${titleHtml}</h1>${sub?`<p class="subtitle">${sub}</p>`:''}</div></div>`;

@@ -1,4 +1,4 @@
-const CACHE='english-world-v4';
+const CACHE='english-world-v5';
 const CORE=['./','./index.html','./styles.css','./app.js','./manifest.json'];
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()));
