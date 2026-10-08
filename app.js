@@ -124,9 +124,8 @@ function renderNav(route){
 }
 const ALL_LINKS=[
   ['ACTIVITIES',[['Podcasts','#/podcasts'],['Lessons + Grammar','#/lessons'],['Words','#/words'],['How to Speak','#/speak'],['Shadowing','#/shadowing'],['Talk with GPT','#/talk'],['Write with GPT','#/write']]],
-  ['MY ENGLISH WORLD',[['Progress','#/progress'],['Journal','#/journal'],['Weekly Review','#/review']]],
-  ['LEARN',[['Grammar','#/grammar']]],
-  ['RESOURCES',[['Resources','#/resources'],['Export / Import','#/settings']]],
+  ['MY ENGLISH WORLD',[['Progress','#/progress'],['Journal','#/journal']]],
+  ['RESOURCES',[['Resources','#/resources'],['Export / Import','#/settings'],['Reset stats','#/reset']]],
 ];
 function openMore(){
   $('#moreBox').innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><h2 class="big">Menu</h2><button class="chip" data-close>Close</button></div>`+
@@ -177,10 +176,10 @@ function route(){
   closeSheets(); window.scrollTo({top:0});
   const R={home:'home',vocabulary:'learn',flashcards:'cards',calendar:'cal'};
   renderNav(R[h]||'home');
-  ({home:pHome,calendar:pCal,progress:pProgress,journal:pJournal,review:pReview,
+  ({home:pHome,calendar:pCal,progress:pProgress,journal:pJournal,
     podcasts:pPodcasts,lessons:pLessons,words:pWords,speak:pSpeak,shadowing:pShadow,
     talk:pTalk,write:pWrite,quizlet:pQuizlet,vocabulary:pVocab,flashcards:pFlash,
-    grammar:pGrammar,resources:pRes,settings:pSettings}[h]||pHome)();
+    resources:pRes,settings:pSettings,reset:pReset}[h]||pHome)();
 }
 
 /* ---------- HOME ---------- */
@@ -188,10 +187,17 @@ function pHome(){
   const q=QUOTES[Math.floor(Math.random()*QUOTES.length)];
   const week=[...Array(7)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()-(6-i));return todayStr(d)});
   const wkCount=S.sessions.filter(s=>week.includes(s.date)).length;
+  const total=S.vocabulary.length;
+  const known=S.vocabulary.filter(w=>w.status==='KNOWN').length;
   app.innerHTML=`
     <div class="trow">${sqImage()}<div><h1 class="hero sm">${greeting()},<br><em>Natalia.</em></h1></div></div>
     <div class="quote-card small"><div class="quote-src">Quote of the day</div>
       <blockquote>“${esc(q.t)}”</blockquote><div class="quote-src">${esc(q.s)}</div></div>
+    <div class="ministats">
+      <div><b>${total}</b><span>words</span></div>
+      <div><b>${known}</b><span>known</span></div>
+      <div><b>${wkCount}</b><span>sessions</span></div>
+    </div>
     ${heroImage()}
     <div class="card"><div class="quote-src">Progress</div>
       <div style="font-family:var(--font-serif);font-size:26px;margin:8px 0">You showed up ${wkCount} time${wkCount===1?'':'s'} this week.</div>
@@ -208,7 +214,7 @@ function pCal(){
   for(let i=0;i<start;i++)cells.push('');
   for(let d=1;d<=days;d++)cells.push(d);
   app.innerHTML=`${titleRow('Calendar')}
-  <p class="subtitle">♡ — learning day · ☁ — rest day.</p>
+  <p class="subtitle">★ — learning day · ☁ — rest day.</p>
   <div class="card"><div style="display:flex;justify-content:space-between;align-items:center">
     <button class="chip" id="pm">←</button><b style="font-family:var(--font-serif);font-size:24px">${calCursor.toLocaleString('en',{month:'long',year:'numeric'})}</b>
     <button class="chip" id="nm">→</button></div>
@@ -217,10 +223,20 @@ function pCal(){
     const k=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const v=S.calendar[k]; const isT=k===todayStr();
     const inner=v==='study'
-      ? `<span class="hwrap"><span class="hrt">♥︎</span><span class="hnum">${d}</span></span>`
-      : `${d}${v==='rest'?'<span class="m">☁</span>':''}`;
+      ? `<span class="hwrap"><span class="str">★︎</span><span class="hnum">${d}</span></span>`
+      : `${d}${v==='rest'?'<span class="cloud">☁</span>':''}`;
     return `<button class="cal-day ${isT?'today':''}" data-day="${k}">${inner}</button>`}).join('')}
-  </div></div>`;
+  </div></div>
+  <div class="card"><div class="quote-src">This month</div>
+    <div class="kv"><span>Learning days ★</span><b>${Object.values(S.calendar).filter(v=>v==='study').length}</b></div>
+    <div class="kv"><span>Rest days ☁</span><b>${Object.values(S.calendar).filter(v=>v==='rest').length}</b></div>
+    <div class="kv"><span>Sessions</span><b>${S.sessions.length}</b></div>
+    <div class="divider"></div>
+    <div class="quote-src">Level progress · smart estimate</div>
+    <div style="font-family:var(--font-serif);font-size:22px;margin:6px 0">B1 → B2 · ${levelPct()}%</div>
+    <div class="lvlbar"><i style="width:${levelPct()}%"></i></div>
+    <div class="small">${levelMsg(levelPct())}</div>
+  </div>`;
   $('#pm').onclick=()=>{calCursor=new Date(y,m-1,1);pCal()};
   $('#nm').onclick=()=>{calCursor=new Date(y,m+1,1);pCal()};
   app.querySelectorAll('[data-day]').forEach(b=>b.onclick=()=>{
@@ -318,24 +334,26 @@ function pLessons(){
   const list=[...S.lessons].reverse().slice(0,8);
   activityShell('Lessons','Grammar in real life. Keep it light.',`
     <div class="card"><button class="btn" id="addL">+ New lesson note</button></div>
-    ${list.map(l=>`<div class="item"><h3>${esc(l.title||'Lesson')}</h3><p>${esc(l.grammar||'')}</p><div class="meta">${esc(l.date||'')} · understood: ${esc(l.understood||'—')}</div></div>`).join('')}`,
+    ${list.map(l=>`<div class="item"><h3>${esc(l.title||'Lesson')}</h3><p>${esc(l.grammar||'')}</p><div class="meta">${esc(l.date||'')} · understood: ${esc(l.understood||'—')}</div>
+    <div style="display:flex;gap:10px;margin-top:12px;align-items:center;justify-content:flex-end">
+      <button class="iconbtn" data-edit="${l.id}" aria-label="Edit">${PENCIL}</button>
+      <button class="iconbtn" data-del="${l.id}" aria-label="Delete">${TRASH}</button>
+    </div></div>`).join('')}`,
     null);
-  $('#addL').onclick=()=>{
-    openModal(`<h2 class="big">Lesson</h2><form id="lf">${field('Lesson','title')}${field('Grammar topic','grammar')}${field('What I understood','understood')}${field('What was difficult','difficult')}<label class="lbl">Notes</label><textarea name="notes"></textarea><button class="btn" style="margin-top:12px">Save + log session</button></form>`);
-    $('#lf').onsubmit=e=>{e.preventDefault();const o=Object.fromEntries(new FormData(e.target));o.id=uid();o.date=todayStr();S.lessons.unshift(o);logSession('Lessons',25);save();route();toast('Logged ♡')};
-  };
+  $('#addL').onclick=()=>lessonForm(null);
+  app.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>lessonForm(S.lessons.find(x=>x.id===b.dataset.edit)));
+  app.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{S.lessons=S.lessons.filter(x=>x.id!==b.dataset.del);save();route()});
+}
+function lessonForm(l){
+  openModal(`<h2 class="big">${l?'Edit':'New'} lesson</h2><form id="lf">${field('Lesson','title',l?l.title:'')}${field('Grammar topic','grammar',l?l.grammar:'')}${field('What I understood','understood',l?l.understood:'')}${field('What was difficult','difficult',l?l.difficult:'')}<label class="lbl">Notes</label><textarea name="notes">${esc(l?l.notes:'')}</textarea><button class="btn" style="margin-top:12px">Save</button></form>`);
+  $('#lf').onsubmit=e=>{e.preventDefault();const o=Object.fromEntries(new FormData(e.target));
+    if(l){Object.assign(l,o)}else{o.id=uid();o.date=todayStr();S.lessons.unshift(o);logSession('Lessons',25)}
+    save();closeSheets();route();toast('Saved ♡')};
 }
 function pWords(){
   const list=[...S.wordsLessons].reverse().slice(0,8);
-  activityShell('Words','Go girl! Step by step!',`
-    <div class="card"><button class="btn" id="addW2">+ Log words lesson</button></div>
-    ${list.map(l=>`<div class="item"><h3>Lesson ${esc(l.number||'')} — ${esc(l.title||'')}</h3><p>${esc((l.wordsText||'').slice(0,140))}</p><div class="meta">${esc(l.date||'')}</div></div>`).join('')}`,
+  activityShell('Words','Go girl! Step by step!',wordListHTML(w=>w.source==='Words'),
     'https://youtube.com/playlist?list=PLD6SPjEPomauo4F7ejH8BOhJq0LUzDoiT&si=5EcOE9Dj0CSbyKcU','▶ OPEN 5000 WORDS');
-  $('#addW2').onclick=()=>{
-    openModal(`<h2 class="big">Words lesson</h2><form id="wf">${field('Lesson number','number','', '', 'number')}${field('Lesson title','title')}<label class="lbl">Words encountered</label><textarea name="wordsText" placeholder="paste words here"></textarea><button class="btn" style="margin-top:12px">Save</button></form>`);
-    $('#wf').onsubmit=e=>{e.preventDefault();const o=Object.fromEntries(new FormData(e.target));o.id=uid();o.date=todayStr();S.wordsLessons.unshift(o);logSession('Words',20);save();route()};
-  };
-}
 function pSpeak(){
   activityShell('How to Speak','Patterns you can steal for real life.',wordListHTML(w=>w.source==='How to Speak'),
     'https://youtube.com/playlist?list=PLD6SPjEPomatoOVGOzBcAYYNgSGyC0NK2&si=AmNy7_zpvZrdiqFv','▶ OPEN PLAYLIST');
@@ -343,55 +361,78 @@ function pSpeak(){
 function pShadow(){
   activityShell('Shadowing','Repeat · shadow · own it.',wordListHTML(w=>w.source==='Shadowing'),'https://shadowing.tech','▶ OPEN SHADOWING');
 }
-const TALK_IDEAS=[
-  ['Hockey','Explain last night\u2019s game to a friend. Who played great and why?'],
-  ['Fashion','Describe your today\u2019s outfit like a street-style blogger.'],
-  ['Makeup','Walk me through your makeup routine, step by step.'],
-  ['Coffee','Order your perfect coffee in a busy NYC caf\u00e9. Small talk included.'],
-  ['Books','Tell me about the book you\u2019re reading. Would you recommend it?'],
+const TALK_PROMPTS=[
+  "Pretend we are two friends having matcha in a Manhattan cafe. Chat with me and correct me softly.",
+  "Describe your dream fashion evening in Soho, London. Where do we go, what do we wear?",
+  "Talk to me about an LA sunset with palm trees. How was your day, glow girl?",
+  "Let's chat about street style in New York like girlfriends. Ask me questions.",
+  "Pretend you are a glossy magazine editor. Interview me about my English glow-up era.",
+  "Tell me about your perfect cozy evening: a cafe, city lights, good music. I'll do the same.",
 ];
-const WRITE_IDEAS=[
-  ['Hockey','Write 5 sentences about your favourite team. Then ask for a native version.'],
-  ['Fashion','Describe a street-style look in one short paragraph.'],
-  ['Makeup','Write your 5-minute makeup routine as simple instructions.'],
-  ['Coffee','Write a tiny caf\u00e9 scene: smells, sounds, people.'],
-  ['Books','Summarise your current book in 6 sentences.'],
+const WRITE_PROMPTS=[
+  "Here is my paragraph. Fix it gently and give me a more native, magazine-like version.",
+  "Write a short editorial paragraph about a fashionable London evening. Then ask for corrections.",
+  "Describe your dream NYC morning in 6 sentences, like a lifestyle blogger.",
+  "Write about your favourite beauty ritual as if for a glossy magazine.",
+  "Describe an LA sunset scene: light, palms, mood. Make it cinematic.",
+  "Write a mini review of a film or series you love, in English.",
 ];
-function ideasHTML(list){
-  return list.map(([t,p])=>`<div class="item"><h3 style="font-size:21px">${esc(t)}</h3><p class="small">“${esc(p)}”</p></div>`).join('');
-}
 function pTalk(){
+  const p=TALK_PROMPTS[Math.floor(Math.random()*TALK_PROMPTS.length)];
   activityShell('Talk with GPT','Speak freely. Save what shines.',`
-    <div class="card"><div class="quote-src">Prompt idea</div><p class="small">“Talk to me like a friend in London. Correct me softly, give me 3 new phrases.”</p>
-    <button class="btn light" id="logT">✓ Log talking session</button></div>
-    <div class="eyebrow">More ideas</div>${ideasHTML(TALK_IDEAS)}`
+    <div class="card"><div class="quote-src">Prompt idea</div><p class="small">${esc(p)}</p>
+    <button class="btn light" id="logT">Log talking session</button></div>`
     +wordListHTML(w=>w.source==='Talk with GPT'),null);
-  $('#logT').onclick=()=>{logSession('Speaking',15);save();toast('Logged ♡');route()};
+  $('#logT').onclick=()=>{logSession('Speaking',15);save();toast('Saved');route()};
 }
 function pWrite(){
+  const p=WRITE_PROMPTS[Math.floor(Math.random()*WRITE_PROMPTS.length)];
   activityShell('Write with GPT','One paragraph. Then polish.',`
-    <div class="card"><div class="quote-src">Prompt idea</div><p class="small">“Here is my paragraph. Fix it gently and give me a more native version.”</p>
-    <button class="btn light" id="logW">✓ Log writing session</button></div>
-    <div class="eyebrow">More ideas</div>${ideasHTML(WRITE_IDEAS)}`
+    <div class="card"><div class="quote-src">Prompt idea</div><p class="small">${esc(p)}</p>
+    <button class="btn light" id="logW">Log writing session</button></div>`
     +wordListHTML(w=>w.source==='Write with GPT'),null);
-  $('#logW').onclick=()=>{logSession('Writing',15);save();toast('Logged ♡');route()};
+  $('#logW').onclick=()=>{logSession('Writing',15);save();toast('Saved');route()};
 }
 function pQuizlet(){ location.hash='#/flashcards'; }
 
 /* ---------- VOCABULARY ---------- */
 let vQ='',vStatus='';
 const TRASH='<svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><path d="M10 11v6M14 11v6"/></svg>';
+const PENCIL='<svg viewBox="0 0 24 24"><path d="M4 20l4-1 11-11a2.1 2.1 0 0 0-3-3L5 16l-1 4z"/><path d="M13.5 6.5l3 3"/></svg>';
+function askConfirm(title,text,onYes){
+  openModal(`<h2 class="big">${esc(title)}</h2><p class="small">${esc(text)}</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px">
+  <button class="btn" id="cfY">Yes</button><button class="btn ghost" id="cfN">No</button></div>`);
+  $('#cfY').onclick=()=>{closeSheets();onYes()};
+  $('#cfN').onclick=()=>closeSheets();
+}
+function levelPct(){
+  const knownN=S.vocabulary.filter(w=>w.status==='KNOWN').length;
+  const sessN=S.sessions.length;
+  const studyN=Object.values(S.calendar).filter(v=>v==='study').length;
+  return Math.min(97,Math.round(Math.min(knownN,120)/120*55+Math.min(sessN,60)/60*30+Math.min(studyN,30)/30*15));
+}
+function levelMsg(p){
+  if(p<25)return'Fresh start on the B1 to B2 road. Every word counts.';
+  if(p<50)return'Good pace. Keep collecting words and study days.';
+  if(p<75)return'Strong progress. B2 is getting closer.';
+  return'Almost there. Polish speaking and hard words.';
+}
+function pReset(){
+  askConfirm('Reset stats?','Sessions, calendar marks and card progress will be cleared. Words, lessons and journal stay.',()=>{
+    S.sessions=[];S.calendar={};S.flash={};save();toast('Stats reset');location.hash='#/progress';
+  });
+}
 function pVocab(){
   let list=[...S.vocabulary];
   if(vQ)list=list.filter(w=>(w.en+w.ru+(w.example||'')).toLowerCase().includes(vQ.toLowerCase()));
   if(vStatus)list=list.filter(w=>w.status===vStatus);
   app.innerHTML=`${titleRow('Vocabulary',S.vocabulary.length+' words collected.')}
   <div class="card"><input id="vq" placeholder="Search words…" value="${esc(vQ)}">
-    <div class="chiprow">${['','NEW','LEARNING','KNOWN','DIFFICULT'].map(s=>`<button class="chip sm ${vStatus===s?'on':''}" data-st="${s}">${s==='NEW'?'new':s==='LEARNING'?'learning':s==='KNOWN'?'known':s==='DIFFICULT'?'difficult':'all'}</button>`).join('')}</div>
+    <div class="chiprow" style="justify-content:flex-end;margin-top:10px">${['','NEW','LEARNING','KNOWN','DIFFICULT'].map(s=>`<button class="chip sm ${vStatus===s?'on':''}" data-st="${s}" style="padding:6px 10px;font-size:11px;min-height:32px">${s==='NEW'?'new':s==='LEARNING'?'learning':s==='KNOWN'?'known':s==='DIFFICULT'?'difficult':'all'}</button>`).join('')}</div>
     <button class="btn" data-add style="margin-top:10px">+ Add</button></div>
-  ${list.slice(0,30).map(w=>`<div class="item"><h3>${esc(w.en)}</h3><p>${esc(w.ru||'')}</p>
+  ${list.slice(0,30).map(w=>`<div class="item"><span class="tag corner ${w.status==='KNOWN'?'known':''}">${esc(w.status||'NEW')}</span><h3>${esc(w.en)}</h3><p>${esc(w.ru||'')}</p>
     ${w.example?`<p class="small"><i>${esc(w.example)}</i></p>`:''}
-    <div style="margin-top:10px"><span class="tag ${w.status==='KNOWN'?'known':''}">${esc(w.status||'NEW')}</span></div>
     <div style="display:flex;gap:10px;margin-top:12px;align-items:center">
       <button class="chip sm" data-kn="${w.id}" style="flex:1">${w.status==='KNOWN'?'♡ Known':'♡ Mark known'}</button>
       <button class="iconbtn" data-del="${w.id}" aria-label="Delete">${TRASH}</button>
@@ -456,15 +497,21 @@ function pGrammar(){
 
 /* ---------- RESOURCES ---------- */
 function pRes(){
-  app.innerHTML=`<div class="eyebrow">Library</div><h1 class="hero">Resources</h1><p class="subtitle">Only favourites. Nothing extra.</p>
-  ${heroImage('My shelf')}
+  app.innerHTML=`${titleRow('Resources','Only favourites. Nothing extra.')}
   <div class="card"><button class="btn" data-add>+ Add resource</button></div>
-  ${S.resources.map(r=>`<div class="item"><h3>${esc(r.name)}</h3><p>${esc(r.category||'')} ${r.notes?'· '+esc(r.notes):''}</p><div class="meta"><a href="${esc(r.link)}" target="_blank" rel="noopener">Open link ↗</a> · <a href="#" data-del="${r.id}">delete</a></div></div>`).join('')}`;
+  ${S.resources.map(r=>`<div class="item"><h3>${esc(r.name)}</h3><p>${esc(r.category||'')} ${r.notes?'· '+esc(r.notes):''}</p><div class="meta"><a href="${esc(r.link)}" target="_blank" rel="noopener">Open link ↗</a></div><div style="display:flex;gap:10px;margin-top:12px;justify-content:flex-end"><button class="iconbtn" data-edit="${r.id}" aria-label="Edit">${PENCIL}</button><button class="iconbtn" data-del="${r.id}" aria-label="Delete">${TRASH}</button></div></div>`).join('')}`;
   app.querySelector('[data-add]').onclick=()=>{
     openModal(`<h2 class="big">Resource</h2><form id="rf2">${field('Name','name')}${field('Category','category','','Podcast / Words / …')}${field('Link','link')}<label class="lbl">Notes</label><textarea name="notes"></textarea><button class="btn" style="margin-top:12px">Save</button></form>`);
     $('#rf2').onsubmit=e=>{e.preventDefault();const o=Object.fromEntries(new FormData(e.target));o.id=uid();S.resources.push(o);save();route()};
   };
+  app.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>resForm(S.resources.find(x=>x.id===b.dataset.edit)));
   app.querySelectorAll('[data-del]').forEach(a=>a.onclick=e=>{e.preventDefault();S.resources=S.resources.filter(x=>x.id!==a.dataset.del);save();route()});
+}
+function resForm(r){
+  openModal(`<h2 class="big">${r?'Edit':'New'} resource</h2><form id="rf2">${field('Name','name',r?r.name:'')}${field('Category','category',r?r.category:'','Podcast / Words / ...')}${field('Link','link',r?r.link:'')}<label class="lbl">Notes</label><textarea name="notes">${esc(r?r.notes:'')}</textarea><button class="btn" style="margin-top:12px">Save</button></form>`);
+  $('#rf2').onsubmit=e=>{e.preventDefault();const o=Object.fromEntries(new FormData(e.target));
+    if(r){Object.assign(r,o)}else{o.id=uid();S.resources.push(o)}
+    save();closeSheets();route();toast('Saved')};
 }
 
 /* ---------- SETTINGS ---------- */
