@@ -16,12 +16,11 @@ const defaults=()=>({
   wordsLessons:[], grammar:[], journal:[], reviews:[],
   resources:[
     {id:uid(),name:'English Cactus',category:'Podcast',link:'https://youtube.com/@englishcactusfy?si=fNi7n7mLt683z6lt',notes:'Listening'},
-    {id:uid(),name:'Бебрис — 5000 слов',category:'Words',link:'https://youtube.com/playlist?list=PLD6SPjEPomauo4F7ejH8BOhJq0LUzDoiT&si=5EcOE9Dj0CSbyKcU',notes:'Core words'},
-    {id:uid(),name:'How to Speak',category:'Speaking',link:'https://youtube.com/playlist?list=PLD6SPjEPomatoOVGOzBcAYYNgSGyC0NK2&si=AmNy7_zpvZrdiqFv',notes:'Speaking patterns'},
+    {id:uid(),name:'Words Part 1',category:'Words',link:'https://youtube.com/playlist?list=PLD6SPjEPomauo4F7ejH8BOhJq0LUzDoiT&si=5EcOE9Dj0CSbyKcU',notes:'Core words'},
+    {id:uid(),name:'Words Part 2',category:'Words',link:'https://youtube.com/playlist?list=PLD6SPjEPomas-i-odgv_nktMm0caeUFrf&si=UJNxYWtHUitPeMlT',notes:'Second half'},
     {id:uid(),name:'Shadowing',category:'Speaking',link:'https://shadowing.tech',notes:'Shadowing practice'},
     {id:uid(),name:'B1 → C1',category:'Grammar',link:'https://youtube.com/playlist?list=PLD6SPjEPomavdV8S5p7dPaz8o45a-B-hg&si=TdPLXv-hxShHWRAf',notes:'Lessons + Grammar'},
     {id:uid(),name:'B2 → C1',category:'Grammar',link:'https://youtube.com/playlist?list=PLKVXijgJyL3s&si=CTM9uwxJWsSF7eQz',notes:'Lessons + Grammar'},
-    {id:uid(),name:'Words · Part 2',category:'Words',link:'https://youtube.com/playlist?list=PLD6SPjEPomas-i-odgv_nktMm0caeUFrf&si=UJNxYWtHUitPeMlT',notes:'Second half'},
     {id:uid(),name:'How to Speak A0 → A1',category:'Speaking',link:'https://youtube.com/playlist?list=PLD6SPjEPomatoOVGOzBcAYYNgSGyC0NK2&si=szdMH6mszEcl3iBl',notes:'Speaking'},
     {id:uid(),name:'How to Speak A1 → A2',category:'Speaking',link:'https://youtube.com/playlist?list=PLD6SPjEPomatqksnI7khGOkOyeBOb7dYf&si=UtgopTKU2VzzzzFW',notes:'Speaking'}
   ],
@@ -35,11 +34,20 @@ try{S.vocabulary.forEach(w=>{if(w.status==='NEW'||w.status==='DIFFICULT')w.statu
 const EXTRA_RES=[
   {name:'B1 → C1',category:'Grammar',link:'https://youtube.com/playlist?list=PLD6SPjEPomavdV8S5p7dPaz8o45a-B-hg&si=TdPLXv-hxShHWRAf',notes:'Lessons + Grammar'},
   {name:'B2 → C1',category:'Grammar',link:'https://youtube.com/playlist?list=PLKVXijgJyL3s&si=CTM9uwxJWsSF7eQz',notes:'Lessons + Grammar'},
-  {name:'Words · Part 2',category:'Words',link:'https://youtube.com/playlist?list=PLD6SPjEPomas-i-odgv_nktMm0caeUFrf&si=UJNxYWtHUitPeMlT',notes:'Second half'},
+  {name:'Words Part 2',category:'Words',link:'https://youtube.com/playlist?list=PLD6SPjEPomas-i-odgv_nktMm0caeUFrf&si=UJNxYWtHUitPeMlT',notes:'Second half'},
   {name:'How to Speak A0 → A1',category:'Speaking',link:'https://youtube.com/playlist?list=PLD6SPjEPomatoOVGOzBcAYYNgSGyC0NK2&si=szdMH6mszEcl3iBl',notes:'Speaking'},
   {name:'How to Speak A1 → A2',category:'Speaking',link:'https://youtube.com/playlist?list=PLD6SPjEPomatqksnI7khGOkOyeBOb7dYf&si=UtgopTKU2VzzzzFW',notes:'Speaking'}
 ];
 try{EXTRA_RES.forEach(r=>{if(!S.resources.some(x=>x.link===r.link)){r.id=uid();S.resources.push(r)}});save()}catch(e){}
+try{
+  const P1='https://youtube.com/playlist?list=PLD6SPjEPomauo4F7ejH8BOhJq0LUzDoiT&si=5EcOE9Dj0CSbyKcU';
+  const P2='https://youtube.com/playlist?list=PLD6SPjEPomas-i-odgv_nktMm0caeUFrf&si=UJNxYWtHUitPeMlT';
+  S.resources.forEach(r=>{if(r.link===P1)r.name='Words Part 1';if(r.link===P2)r.name='Words Part 2'});
+  S.resources=S.resources.filter(r=>r.name!=='How to Speak');
+  const i2=S.resources.findIndex(r=>r.link===P2);
+  if(i2!==-1){const w2=S.resources.splice(i2,1)[0];const i1=S.resources.findIndex(r=>r.link===P1);S.resources.splice(i1===-1?S.resources.length:i1+1,0,w2)}
+  save();
+}catch(e){}
 function logSession(activity,minutes=15){
   S.sessions.push({id:uid(),date:todayStr(),activity,minutes});
   if(!S.calendar[todayStr()]) S.calendar[todayStr()]='study';
